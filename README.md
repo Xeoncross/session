@@ -1,4 +1,4 @@
-# WARNING work in progress, do no use
+# WARNING work in progress, do not use
 
 # session
 ### Simple HTTP session management milddleware for Go
