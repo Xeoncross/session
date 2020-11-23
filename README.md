@@ -1,3 +1,5 @@
+# WARNING work in progress, do no use
+
 # session
 ### Simple HTTP session management milddleware for Go
 
