@@ -48,9 +48,8 @@ func NewConfig(store Store) Config {
 	}
 }
 
-// Middleware wrapper for HTTP server
-func Middleware(next http.Handler, config Config) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func Init(config Config) func(http.ResponseWriter, *http.Request) *Session {
+	return func(w http.ResponseWriter, r *http.Request) *Session {
 
 		var session *Session
 
@@ -80,18 +79,54 @@ func Middleware(next http.Handler, config Config) http.Handler {
 			http.SetCookie(w, &cookie)
 		}
 
-		// Handle request
-		next.ServeHTTP(w, setSessionContext(r, session))
-
-		// Save session changes at end of request
-		// TODO only if needed
-		err = config.Store.Save(r.Context(), session)
-		if err != nil {
-			// TODO
-		}
-
-	})
+		return session
+	}
 }
+
+// Middleware wrapper for HTTP server
+// func Middleware(next http.Handler, config Config) http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+// 		var session *Session
+
+// 		// Look for existing, valid session from cookie
+// 		sessionCookie, err := r.Cookie(config.BaseCookie.Name)
+// 		if err == nil {
+// 			if sessionCookie.Value != "" {
+// 				sessionID := DecodeSessionID(sessionCookie.Value)
+
+// 				// Invalid
+// 				if sessionID != nil && len(sessionID) == config.SessionIDLength {
+// 					var err error
+// 					session, err = config.Store.Get(r.Context(), sessionID)
+// 					if err != nil {
+// 						// TODO
+// 					}
+// 				}
+// 			}
+// 		}
+
+// 		if session == nil {
+// 			session = NewSession(config.SessionIDLength)
+
+// 			// Ensure cookie is sent to client this request
+// 			cookie := config.BaseCookie
+// 			cookie.Value = EncodeSessionID(session.ID)
+// 			http.SetCookie(w, &cookie)
+// 		}
+
+// 		// Handle request
+// 		next.ServeHTTP(w, setSessionContext(r, session))
+
+// 		// Save session changes at end of request
+// 		// TODO only if needed
+// 		err = config.Store.Save(r.Context(), session)
+// 		if err != nil {
+// 			// TODO
+// 		}
+
+// 	})
+// }
 
 // TODO allow multiple session stores
 func setSessionContext(r *http.Request, session *Session) *http.Request {
@@ -99,6 +134,6 @@ func setSessionContext(r *http.Request, session *Session) *http.Request {
 }
 
 // Load session for user
-func Load(r *http.Request) *Session {
-	return r.Context().Value(sessionKey).(*Session)
-}
+// func Load(r *http.Request) *Session {
+// 	return r.Context().Value(sessionKey).(*Session)
+// }

@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"io"
@@ -15,7 +16,7 @@ const flashesKey = "_flash"
 func NewSession(length int) *Session {
 	return &Session{
 		ID:     generateRandomKey(length),
-		values: make(map[string]interface{}),
+		Values: make(map[string]interface{}),
 	}
 }
 
@@ -25,9 +26,9 @@ type Session struct {
 	// user data.
 	ID []byte
 	// Values contains the user-data for the session.
-	values map[string]interface{}
+	Values map[string]interface{}
 	// Session changed and should be saved
-	changed bool
+	store Store
 }
 
 // Base64ID version of ID bytes
@@ -37,7 +38,7 @@ func (s *Session) Base64ID() string {
 
 // Get will return the value or nil
 func (s *Session) Get(key string) interface{} {
-	if v, ok := s.values[key]; ok {
+	if v, ok := s.Values[key]; ok {
 		return v
 	}
 	return nil
@@ -45,14 +46,19 @@ func (s *Session) Get(key string) interface{} {
 
 // Set will update or create a new key value
 func (s *Session) Set(key string, value interface{}) {
-	if v, ok := s.values[key]; ok {
-		if v != value {
-			s.changed = true
-		}
-	} else {
-		s.changed = true
-	}
-	s.values[key] = value
+	// if v, ok := s.Values[key]; ok {
+	// 	if v != value {
+	// 		s.changed = true
+	// 	}
+	// } else {
+	// 	s.changed = true
+	// }
+	s.Values[key] = value
+}
+
+// Save a session
+func (s *Session) Save(ctx context.Context) error {
+	return s.store.Save(ctx, s)
 }
 
 // Flashes returns a slice of flash messages from the session.
@@ -65,9 +71,9 @@ func (s *Session) Flashes(vars ...string) []interface{} {
 	if len(vars) > 0 {
 		key = vars[0]
 	}
-	if v, ok := s.values[key]; ok {
+	if v, ok := s.Values[key]; ok {
 		// Drop the flashes and return it.
-		delete(s.values, key)
+		delete(s.Values, key)
 		s.changed = true
 		flashes = v.([]interface{})
 	}
@@ -84,10 +90,10 @@ func (s *Session) AddFlash(value interface{}, vars ...string) {
 		key = vars[0]
 	}
 	var flashes []interface{}
-	if v, ok := s.values[key]; ok {
+	if v, ok := s.Values[key]; ok {
 		flashes = v.([]interface{})
 	}
-	s.values[key] = append(flashes, value)
+	s.Values[key] = append(flashes, value)
 	s.changed = true
 }
 

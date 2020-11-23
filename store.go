@@ -1,6 +1,8 @@
 package session
 
-import "context"
+import (
+	"context"
+)
 
 // Store interface for session management
 type Store interface {
